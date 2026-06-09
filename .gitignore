@@ -1,0 +1,31 @@
+# PowerShell
+*.ps1.bak
+*.psm1.bak
+*.psd1.bak
+
+# Windows
+*.lnk
+*.bat.bak
+Desktop.ini
+Thumbs.db
+$RECYCLE.BIN/
+
+# IDE
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+out/
+bin/
+obj/
+
+# OS files
+.DS_Store
+ehthumbs.db
