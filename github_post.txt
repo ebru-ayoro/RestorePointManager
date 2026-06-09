@@ -1,0 +1,129 @@
+Windows Restore Point Manager
+
+A lightweight PowerShell WinForms GUI to create, view, and delete System Restore points on Windows 11 (25H2+). Runs entirely in PowerShell 5.1+ with no external dependencies.
+
+Why: Windows built-in restore point tools are buried in System Properties. This app surfaces them in a clean, modern card-based UI with dark mode, scheduled auto-creation, and one-click access.
+
+================================================================================
+FEATURES
+================================================================================
+
+CREATE RESTORE POINTS
+  - Enter a custom description and click Create.
+  - Three fallback methods tried in order:
+    1. Checkpoint-Computer (PowerShell cmdlet)
+    2. WMI Invoke-CimMethod (SystemRestore class)
+    3. P/Invoke SRSetRestorePointW (C# Add-Type via advapi32)
+  - Per-method error capture displayed via Write-Warning.
+
+LIST RESTORE POINTS
+  - Columns: Sequence#, Description, Created timestamp, Type.
+  - Type maps readable names: Manual, App Install, OS Upgrade, Device Driver,
+    Modify Settings, System Checkpoint, etc.
+  - Auto-refreshes after create/delete.
+
+DELETE RESTORE POINTS
+  - Select a row in the list, then click Delete Selected.
+  - Confirmation dialog before deletion.
+  - Bold red button (danger color + black bold text).
+
+AUTO-CREATE (SCHEDULER)
+  - Toggle "Auto-create every" ON.
+  - Set interval 1-168 hours via NumericUpDown.
+  - Changes debounce 5 seconds before taking effect (prevents rapid updates).
+  - Timer runs in background; app can minimize to tray.
+  - Status bar shows "Auto: every X hour(s)".
+
+STARTUP LAUNCH
+  - Toggle "Run at startup" creates a .lnk in the Windows Startup folder
+    using WScript.Shell. Removes on disable.
+  - App launches minimized to system tray.
+
+SYSTEM PROPERTIES
+  - One-click button opens SystemPropertiesProtection.exe directly.
+
+PROTECTION STATUS INDICATOR
+  - Green circle dot → System Protection active (VSS running or restore
+    points exist).
+  - Red circle dot → Protection disabled.
+  - Status also shown in form title bar.
+
+DARK / LIGHT THEME
+  - Auto-detects Windows theme from registry:
+    HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme
+  - Full dark mode palette (bg, card, text, accent, danger, success, input
+    backgrounds, borders).
+  - Light mode uses clean white/gray palette.
+  - 5-second polling timer detects runtime theme changes (shows restart notice).
+
+DARK TITLE BAR & LIST VIEW
+  - DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE) applied to main form.
+  - SetWindowTheme("DarkMode_Explorer") applied to ListView for dark column headers.
+  - Applied right before Application::Run (after handle is ready).
+
+CUSTOM TOGGLE SWITCH
+  - Painted toggle with pill-shaped track (rounded via GraphicsPath arcs).
+  - Circular thumb (ellipse Region).
+  - ON/OFF text drawn via Paint event: ON visible on left, OFF on right.
+  - Clicking track or thumb toggles; text labels do NOT trigger toggle.
+  - Uses $script:toggleStore hashtable (integer IDs in Control.Tag) to avoid
+    PowerShell closure scoping issues.
+
+MINIMIZE TO TRAY
+  - Closing the window hides to tray instead of exiting.
+  - NotifyIcon with Shield icon.
+  - Context menu: Show Window / Exit.
+  - Balloon tip on first minimize.
+
+TOOLTIPS
+  - Every interactive control has a descriptive tooltip:
+    Create, Refresh, System Properties, Delete, Description textbox,
+    toggles, interval spinner, hours label, list view, protection indicator.
+  - Toggle tooltips set on all three children (track, thumb, label).
+
+DEBOUNCED INTERVAL
+  - NumericUpDown ValueChanged resets a 5-second debounce timer.
+  - Auto interval only updates after 5 seconds of no changes.
+
+================================================================================
+USAGE
+================================================================================
+
+1. Double-click Run_RestorePointManager.bat (auto-elevates to admin).
+2. System Protection must be enabled on at least one drive.
+   - Click "System Properties..." to open the control panel directly.
+3. Enter a description and click "Create" to make a restore point.
+4. Use toggles to enable auto-creation or startup launch.
+5. Select a row and click "Delete Selected" to remove a restore point.
+
+================================================================================
+REQUIREMENTS
+================================================================================
+
+- Windows 11 (25H2+) or Windows 10 with PowerShell 5.1+
+- Administrator privileges
+- System Protection enabled on at least one volume
+
+================================================================================
+TECHNICAL DETAILS
+================================================================================
+
+Language:          PowerShell 5.1+
+UI Framework:      WinForms (System.Windows.Forms + System.Drawing)
+P/Invoke APIs:     SRSetRestorePointW (advapi32)
+                   DwmSetWindowAttribute (dwmapi)
+                   SetWindowTheme (uxtheme)
+Creation Methods:  Checkpoint-Computer → WMI → P/Invoke (3 fallbacks)
+Theme Detection:   Registry-based, 5s polling timer
+Layout:            TableLayoutPanel + FlowLayoutPanel (responsive, no overlaps)
+Closure Fix:       $script:toggleStore hashtable avoids PowerShell closure bugs
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+RestorePointManager.ps1       Main application (single file, ~780 lines)
+Run_RestorePointManager.bat   Launcher with auto-elevation (admin check)
+README.md                     Setup instructions
+
+================================================================================
